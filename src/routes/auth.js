@@ -7,7 +7,6 @@ const prisma = require('../lib/prisma');
 
 const router = express.Router();
 
-// Configuración email
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
@@ -43,23 +42,26 @@ router.post('/register', async (req, res) => {
       data: { name, email, password: hashedPassword, goal, verifyToken }
     });
 
-    // Email de verificación
-    await transporter.sendMail({
-      from: `"Senerva" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Confirma tu cuenta en Senerva',
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:32px;">
-          <h2 style="color:#1E8A4A">Bienvenido a Senerva, ${name} 🌿</h2>
-          <p>Haz clic en el botón para confirmar tu cuenta:</p>
-          <a href="https://senerva.com/verify?token=${verifyToken}" 
-             style="display:inline-block;padding:12px 28px;background:#1E8A4A;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0">
-            Confirmar mi cuenta
-          </a>
-          <p style="color:#888;font-size:12px;margin-top:24px">Si no creaste esta cuenta ignora este email.</p>
-        </div>
-      `
-    });
+    try {
+      await transporter.sendMail({
+        from: `"Senerva" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Confirma tu cuenta en Senerva',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:32px;">
+            <h2 style="color:#1E8A4A">Bienvenido a Senerva, ${name} 🌿</h2>
+            <p>Haz clic en el botón para confirmar tu cuenta:</p>
+            <a href="https://senerva.com/verify?token=${verifyToken}"
+               style="display:inline-block;padding:12px 28px;background:#1E8A4A;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0">
+              Confirmar mi cuenta
+            </a>
+            <p style="color:#888;font-size:12px;margin-top:24px">Si no creaste esta cuenta ignora este email.</p>
+          </div>
+        `
+      });
+    } catch (emailError) {
+      console.error('Error enviando email:', emailError.message);
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, plan: user.plan },
@@ -149,29 +151,32 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = new Date(Date.now() + 3600000); // 1 hora
+    const resetExpires = new Date(Date.now() + 3600000);
 
     await prisma.user.update({
       where: { id: user.id },
       data: { resetToken, resetExpires }
     });
 
-    await transporter.sendMail({
-      from: `"Senerva" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Recupera tu contraseña de Senerva',
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:32px;">
-          <h2 style="color:#1E8A4A">Recupera tu contraseña 🔐</h2>
-          <p>Haz clic en el botón para crear una nueva contraseña. El enlace expira en 1 hora.</p>
-          <a href="https://senerva.com/reset-password?token=${resetToken}"
-             style="display:inline-block;padding:12px 28px;background:#1E8A4A;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0">
-            Cambiar contraseña
-          </a>
-          <p style="color:#888;font-size:12px;margin-top:24px">Si no solicitaste esto ignora este email.</p>
-        </div>
-      `
-    });
+    try {
+      await transporter.sendMail({
+        from: `"Senerva" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Recupera tu contraseña de Senerva',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:32px;">
+            <h2 style="color:#1E8A4A">Recupera tu contraseña 🔐</h2>
+            <p>El enlace expira en 1 hora.</p>
+            <a href="https://senerva.com/reset-password?token=${resetToken}"
+               style="display:inline-block;padding:12px 28px;background:#1E8A4A;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0">
+              Cambiar contraseña
+            </a>
+          </div>
+        `
+      });
+    } catch (emailError) {
+      console.error('Error enviando email:', emailError.message);
+    }
 
     res.json({ message: 'Si el email existe recibirás un correo' });
 
