@@ -72,7 +72,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       message: 'Cuenta creada correctamente',
       token,
-      user: { id: user.id, name: user.name, email: user.email, goal: user.goal, plan: user.plan, verified: user.verified }
+      user: { id: user.id, name: user.name, email: user.email, goal: user.goal, plan: user.plan, role: user.role, verified: user.verified }
     });
 
   } catch (error) {
@@ -109,7 +109,7 @@ router.post('/login', async (req, res) => {
     res.json({
       message: 'Login correcto',
       token,
-      user: { id: user.id, name: user.name, email: user.email, goal: user.goal, plan: user.plan, verified: user.verified }
+      user: { id: user.id, name: user.name, email: user.email, goal: user.goal, plan: user.plan, role: user.role, verified: user.verified }
     });
 
   } catch (error) {

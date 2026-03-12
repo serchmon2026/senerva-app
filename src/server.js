@@ -5,6 +5,7 @@ const helmet = require('helmet');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
+const adminRoutes = require('./routes/admin');
 const agentRoutes = require('./routes/agents');
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/agents', agentRoutes);
 
 app.get('/api/health', (req, res) => {
