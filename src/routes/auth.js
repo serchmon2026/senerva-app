@@ -100,6 +100,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
     }
 
+    if (!user.verified) {
+      return res.status(403).json({ error: 'Debes verificar tu email antes de acceder. Revisa tu bandeja de entrada.' });
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email, plan: user.plan },
       process.env.JWT_SECRET,
@@ -181,6 +185,41 @@ router.post('/forgot-password', async (req, res) => {
     res.json({ message: 'Si el email existe recibirás un correo' });
 
   } catch (error) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// RESET PASSWORD
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener mínimo 8 caracteres' });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetExpires: { gt: new Date() }
+      }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'El enlace ha expirado o no es válido' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword, resetToken: null, resetExpires: null }
+    });
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+
+  } catch (error) {
+    console.error('Error en reset-password:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
