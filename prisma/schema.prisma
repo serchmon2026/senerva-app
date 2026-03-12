@@ -38,8 +38,23 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  dailyUsage DailyUsage[]
   conversations Conversation[]
 }
+
+model DailyUsage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      String   // formato YYYY-MM-DD
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
 model Conversation {
   id        Int      @id @default(autoincrement())
   userId    Int
